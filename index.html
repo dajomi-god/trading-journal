@@ -816,7 +816,8 @@
     trades.push(buyTrade);
     pushTradeToSheets(buyTrade);
     if (sellP) {
-      const sellTrade = { id: Date.now() + 1, date, stock, sector, type: 'sell', tradeStyle: '단타', stoploss, qty, price: sellP, reason, mood: dtMood, moodNote: '' };
+      const profitPct = ((sellP - buyP) / buyP * 100).toFixed(2);
+      const sellTrade = { id: Date.now() + 1, date, stock, sector, type: 'sell', tradeStyle: '단타', stoploss, qty, price: sellP, reason, mood: dtMood, moodNote: '', profitPct };
       trades.push(sellTrade);
       pushTradeToSheets(sellTrade);
     }
