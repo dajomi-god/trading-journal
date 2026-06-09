@@ -1542,6 +1542,16 @@
                   ${t.stoploss ? `<span style="font-size:10px;color:var(--red-text);background:var(--red-bg);border:1px solid var(--red);border-radius:3px;padding:2px 7px;white-space:nowrap;">✂ ${t.stoploss}%</span>` : '<span style="font-size:10px;color:var(--text3);background:var(--bg4);border:1px solid var(--border2);border-radius:3px;padding:2px 7px;white-space:nowrap;">손절선 미설정</span>'}
                   <span class="trade-numbers"><span>${fmt(t.qty)}주</span> @ <span>${fmt(t.price)}원</span></span>
                   <span class="trade-total">${fmt(t.qty * t.price)}원</span>
+                  ${(() => {
+                    if (t.type !== 'sell') return '';
+                    const prevBuys = trades.filter(x => x.stock === t.stock && x.type === 'buy' && x.id < t.id);
+                    if (!prevBuys.length) return '';
+                    const avgBuy = prevBuys.reduce((s,x) => s + x.price * x.qty, 0) / prevBuys.reduce((s,x) => s + x.qty, 0);
+                    const pct    = ((t.price - avgBuy) / avgBuy * 100).toFixed(2);
+                    const profit = Math.round((t.price - avgBuy) * t.qty);
+                    const color  = profit >= 0 ? 'var(--green-text)' : 'var(--red-text)';
+                    return `<span style="font-size:11px;font-weight:700;color:${color};white-space:nowrap;">${profit>=0?'+':''}${fmt(profit)}원 (${profit>=0?'+':''}${pct}%)</span>`;
+                  })()}
                   <button class="edit-btn" onclick="openEditModal(${t.id})" title="수정">✎</button>
                   <button class="delete-btn" onclick="deleteTrade(${t.id})" title="삭제">×</button>
                 </div>
