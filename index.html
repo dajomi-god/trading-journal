@@ -380,9 +380,13 @@
             <input type="number" id="dt-sell-price" placeholder="75000" oninput="calcDtProfit()" />
           </div>
           <div class="field">
-            <label>실현손익</label>
-            <div id="dt-profit-display" style="padding:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--text3);min-height:38px;display:flex;align-items:center;">—</div>
+            <label>손절선 (%)</label>
+            <input type="number" id="dt-stoploss" placeholder="예: 3" min="0" max="30" step="0.5" style="font-family:'JetBrains Mono',monospace;" />
           </div>
+        </div>
+        <div class="field">
+          <label>실현손익</label>
+          <div id="dt-profit-display" style="padding:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--text3);min-height:38px;display:flex;align-items:center;">—</div>
         </div>
         <div class="field">
           <label>매매 근거 (선택)</label>
@@ -799,19 +803,20 @@
   }
 
   function addDayTrade() {
-    const date   = document.getElementById('dt-date').value;
-    const stock  = document.getElementById('dt-stock').value.trim();
-    const sector = document.getElementById('dt-sector').value.trim();
-    const qty    = parseInt(document.getElementById('dt-qty').value);
-    const buyP   = parseInt(document.getElementById('dt-buy-price').value);
-    const sellP  = parseInt(document.getElementById('dt-sell-price').value);
-    const reason = document.getElementById('dt-reason').value.trim();
+    const date     = document.getElementById('dt-date').value;
+    const stock    = document.getElementById('dt-stock').value.trim();
+    const sector   = document.getElementById('dt-sector').value.trim();
+    const qty      = parseInt(document.getElementById('dt-qty').value);
+    const buyP     = parseInt(document.getElementById('dt-buy-price').value);
+    const sellP    = parseInt(document.getElementById('dt-sell-price').value);
+    const stoploss = parseFloat(document.getElementById('dt-stoploss').value) || null;
+    const reason   = document.getElementById('dt-reason').value.trim();
     if (!date || !stock || !qty || !buyP) { alert('날짜, 종목, 수량, 매수단가는 필수입니다.'); return; }
-    const buyTrade = { id: Date.now(), date, stock, sector, type: 'buy', tradeStyle: '단타', stoploss: null, qty, price: buyP, reason, mood: dtMood, moodNote: '' };
+    const buyTrade = { id: Date.now(), date, stock, sector, type: 'buy', tradeStyle: '단타', stoploss, qty, price: buyP, reason, mood: dtMood, moodNote: '' };
     trades.push(buyTrade);
     pushTradeToSheets(buyTrade);
     if (sellP) {
-      const sellTrade = { id: Date.now() + 1, date, stock, sector, type: 'sell', tradeStyle: '단타', stoploss: null, qty, price: sellP, reason, mood: dtMood, moodNote: '' };
+      const sellTrade = { id: Date.now() + 1, date, stock, sector, type: 'sell', tradeStyle: '단타', stoploss, qty, price: sellP, reason, mood: dtMood, moodNote: '' };
       trades.push(sellTrade);
       pushTradeToSheets(sellTrade);
     }
@@ -822,6 +827,7 @@
     document.getElementById('dt-qty').value = '';
     document.getElementById('dt-buy-price').value = '';
     document.getElementById('dt-sell-price').value = '';
+    document.getElementById('dt-stoploss').value = '';
     document.getElementById('dt-reason').value = '';
     document.getElementById('dt-profit-display').textContent = '—';
     document.getElementById('dt-profit-display').style.color = 'var(--text3)';
