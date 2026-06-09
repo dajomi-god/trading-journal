@@ -342,6 +342,68 @@
 
       <div class="section-label">매매 입력</div>
 
+      <!-- 일반/단타원클릭 모드 전환 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:12px;">
+        <button id="mode-normal" onclick="setInputMode('normal')" style="padding:7px;background:var(--accent);border:none;border-radius:var(--radius);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">일반 입력</button>
+        <button id="mode-daytrading" onclick="setInputMode('daytrading')" style="padding:7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">⚡ 단타 원클릭</button>
+      </div>
+
+      <!-- 단타 원클릭 폼 -->
+      <div id="daytrading-form" style="display:none;">
+        <div class="field">
+          <label>날짜</label>
+          <input type="date" id="dt-date" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>종목명</label>
+            <input type="text" id="dt-stock" placeholder="삼성전자" autocomplete="off" oninput="autoFillDtSector()" />
+          </div>
+          <div class="field">
+            <label>섹터</label>
+            <input type="text" id="dt-sector" placeholder="반도체" autocomplete="off" list="sector-list" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>수량 (주)</label>
+            <input type="number" id="dt-qty" placeholder="10" min="1" />
+          </div>
+          <div class="field">
+            <label>매수단가 (원)</label>
+            <input type="number" id="dt-buy-price" placeholder="74000" oninput="calcDtProfit()" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>매도단가 (원)</label>
+            <input type="number" id="dt-sell-price" placeholder="75000" oninput="calcDtProfit()" />
+          </div>
+          <div class="field">
+            <label>실현손익</label>
+            <div id="dt-profit-display" style="padding:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--text3);min-height:38px;display:flex;align-items:center;">—</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>매매 근거 (선택)</label>
+          <textarea id="dt-reason" placeholder="지지선 반등, 장대양봉 눌림목..." style="height:56px;"></textarea>
+        </div>
+        <div class="field">
+          <label>매매 심리</label>
+          <div class="mood-grid" id="dt-mood-grid">
+            <button class="mood-btn" data-mood="fear" onclick="setDtMood('fear')">😨<span class="mood-label">공포</span></button>
+            <button class="mood-btn" data-mood="anxiety" onclick="setDtMood('anxiety')">😟<span class="mood-label">불안</span></button>
+            <button class="mood-btn active" data-mood="neutral" onclick="setDtMood('neutral')">😐<span class="mood-label">중립</span></button>
+            <button class="mood-btn" data-mood="confident" onclick="setDtMood('confident')">🤭<span class="mood-label">확신</span></button>
+            <button class="mood-btn" data-mood="greed" onclick="setDtMood('greed')">🤑<span class="mood-label">과욕</span></button>
+          </div>
+        </div>
+        <button class="submit-btn" onclick="addDayTrade()" style="background:var(--accent2);">⚡ 단타 기록 추가</button>
+      </div>
+
+      <!-- 일반 입력 폼 -->
+      <div id="normal-form">
+
       <!-- Buy / Sell / Watch -->
       <div class="type-toggle" style="grid-template-columns:1fr 1fr 1fr;">
         <button class="type-btn buy active" id="btn-buy" onclick="setType('buy')">▲ 매수</button>
@@ -444,6 +506,8 @@
       </div>
 
       <button class="submit-btn" onclick="addTrade()">기록 추가</button>
+
+      </div><!-- /normal-form -->
 
       <!-- 오늘의 심리 토글 -->
       <div class="divider" style="margin:16px 0 12px;"></div>
@@ -691,6 +755,76 @@
         body: JSON.stringify({ action: 'deleteTrade', id })
       });
     } catch(e) {}
+  }
+
+  /* ── Input Mode (단타 원클릭) ── */
+  let inputMode = 'normal';
+  let dtMood = 'neutral';
+
+  function setInputMode(mode) {
+    inputMode = mode;
+    document.getElementById('normal-form').style.display     = mode === 'normal'     ? 'block' : 'none';
+    document.getElementById('daytrading-form').style.display = mode === 'daytrading' ? 'block' : 'none';
+    document.getElementById('mode-normal').style.background      = mode === 'normal'     ? 'var(--accent)' : 'var(--bg3)';
+    document.getElementById('mode-normal').style.color           = mode === 'normal'     ? '#fff' : 'var(--text2)';
+    document.getElementById('mode-normal').style.border          = mode === 'normal'     ? 'none' : '1px solid var(--border2)';
+    document.getElementById('mode-daytrading').style.background  = mode === 'daytrading' ? 'var(--accent)' : 'var(--bg3)';
+    document.getElementById('mode-daytrading').style.color       = mode === 'daytrading' ? '#fff' : 'var(--text2)';
+    document.getElementById('mode-daytrading').style.border      = mode === 'daytrading' ? 'none' : '1px solid var(--border2)';
+    if (mode === 'daytrading') document.getElementById('dt-date').value = new Date().toISOString().split('T')[0];
+  }
+
+  function setDtMood(m) {
+    dtMood = m;
+    document.querySelectorAll('#dt-mood-grid .mood-btn').forEach(b => b.classList.toggle('active', b.dataset.mood === m));
+  }
+
+  function calcDtProfit() {
+    const qty  = parseInt(document.getElementById('dt-qty').value) || 0;
+    const buy  = parseInt(document.getElementById('dt-buy-price').value) || 0;
+    const sell = parseInt(document.getElementById('dt-sell-price').value) || 0;
+    const el   = document.getElementById('dt-profit-display');
+    if (!qty || !buy || !sell) { el.textContent = '—'; el.style.color = 'var(--text3)'; return; }
+    const profit = (sell - buy) * qty;
+    el.textContent = (profit >= 0 ? '+' : '') + profit.toLocaleString('ko-KR') + '원';
+    el.style.color = profit >= 0 ? 'var(--green-text)' : 'var(--red-text)';
+  }
+
+  function autoFillDtSector() {
+    const stock = document.getElementById('dt-stock').value.trim();
+    if (!stock) return;
+    const past = trades.find(t => t.stock === stock && t.sector);
+    if (past && !document.getElementById('dt-sector').value) document.getElementById('dt-sector').value = past.sector;
+  }
+
+  function addDayTrade() {
+    const date   = document.getElementById('dt-date').value;
+    const stock  = document.getElementById('dt-stock').value.trim();
+    const sector = document.getElementById('dt-sector').value.trim();
+    const qty    = parseInt(document.getElementById('dt-qty').value);
+    const buyP   = parseInt(document.getElementById('dt-buy-price').value);
+    const sellP  = parseInt(document.getElementById('dt-sell-price').value);
+    const reason = document.getElementById('dt-reason').value.trim();
+    if (!date || !stock || !qty || !buyP) { alert('날짜, 종목, 수량, 매수단가는 필수입니다.'); return; }
+    const buyTrade = { id: Date.now(), date, stock, sector, type: 'buy', tradeStyle: '단타', stoploss: null, qty, price: buyP, reason, mood: dtMood, moodNote: '' };
+    trades.push(buyTrade);
+    pushTradeToSheets(buyTrade);
+    if (sellP) {
+      const sellTrade = { id: Date.now() + 1, date, stock, sector, type: 'sell', tradeStyle: '단타', stoploss: null, qty, price: sellP, reason, mood: dtMood, moodNote: '' };
+      trades.push(sellTrade);
+      pushTradeToSheets(sellTrade);
+    }
+    save();
+    renderAll();
+    document.getElementById('dt-stock').value = '';
+    document.getElementById('dt-sector').value = '';
+    document.getElementById('dt-qty').value = '';
+    document.getElementById('dt-buy-price').value = '';
+    document.getElementById('dt-sell-price').value = '';
+    document.getElementById('dt-reason').value = '';
+    document.getElementById('dt-profit-display').textContent = '—';
+    document.getElementById('dt-profit-display').style.color = 'var(--text3)';
+    setDtMood('neutral');
   }
 
   /* ── API Key ── */
